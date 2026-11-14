@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() >= 1 &&
+        id.size() <= 128 &&
+        id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidNewsletterSubscriber(data) {
+      return data.keys().hasAll(['email', 'source', 'createdAt']) &&
+        data.keys().hasOnly(['email', 'source', 'createdAt']) &&
+        data.email is string &&
+        data.email.size() >= 5 &&
+        data.email.size() <= 254 &&
+        data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$') &&
+        data.source is string &&
+        data.source.size() >= 1 &&
+        data.source.size() <= 32 &&
+        data.source == 'footer' &&
+        data.createdAt is timestamp &&
+        data.createdAt == request.time;
+    }
+
+    match /newsletter_subscribers/{subscriberId} {
+      // Strictly write-only create for footer subscriptions; zero client reads or mutations prevent PII exposure
+      allow get, list: if false;
+      allow create: if isValidId(subscriberId) &&
+        isValidNewsletterSubscriber(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

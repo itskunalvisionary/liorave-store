@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Email subscription submitted via the storefront footer newsletter form.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+          "description": "Normalized subscriber email address."
+        },
+        "source": {
+          "type": "string",
+          "enum": ["footer"],
+          "minLength": 1,
+          "maxLength": 32,
+          "description": "Origin component where the subscription was submitted."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of subscription creation."
+        }
+      },
+      "required": ["email", "source", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/newsletter_subscribers/{subscriberId}": {
+      "schema": {
+        "$ref": "#/entities/NewsletterSubscriber"
+      },
+      "description": "Write-only storefront visitor newsletter email subscriptions collected from the site footer."
+    }
+  }
+}
